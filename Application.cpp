@@ -79,23 +79,9 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 
 	_camera = new Camera(position, at, up, (FLOAT)_WindowWidth, (FLOAT)_WindowHeight, 0.0f, 100.0f);
 
-	// Light direction from surface (XYZ)
-	lightDirection = XMFLOAT3(0.25f, 0.5f, -1.0f);
-	// Diffuse material properties (RGBA)
-	diffuseMaterial = XMFLOAT4(0.8f, 0.0f, 0.8f, 1.0f);
-	// Diffuse light colour (RGBA)
-	diffuseLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	// Ambient material properties (RGBA)
-	ambientMaterial = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
-	// Ambient light colour (RGBA)
-	ambientLight = XMFLOAT4(0.2f, 0.2f, 0.2f, 0.2f);
-	// Specular material properties (RGBA)
-	specularMaterial = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	// Specular light colour (RGBA)
-	specularLight = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
-	// Specular Power
-	specularPower = 10.0f;
-	XMStoreFloat3(&eyePositionW, _camera->GetPositionVector());
+	InitialiseConstantBufferData();
+
+	_pMeshObject = OBJLoader::Load("Cylinder.txt", _pd3dDevice, true);
 
 	return S_OK;
 }
@@ -466,6 +452,26 @@ HRESULT Application::InitDevice()
     return S_OK;
 }
 
+void Application::InitialiseConstantBufferData()
+{
+	// Light direction from surface (XYZ)
+	lightDirection = XMFLOAT3(0.25f, 0.5f, -1.0f);
+	// Diffuse material properties (RGBA)
+	diffuseMaterial = XMFLOAT4(0.8f, 0.0f, 0.8f, 1.0f);
+	// Diffuse light colour (RGBA)
+	diffuseLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	// Ambient material properties (RGBA)
+	ambientMaterial = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	// Ambient light colour (RGBA)
+	ambientLight = XMFLOAT4(0.2f, 0.2f, 0.2f, 0.2f);
+	// Specular material properties (RGBA)
+	specularMaterial = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
+	// Specular light colour (RGBA)
+	specularLight = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+	// Specular Power
+	specularPower = 10.0f;
+	XMStoreFloat3(&eyePositionW, _camera->GetPositionVector());
+}
 void Application::Cleanup()
 {
 	if (_pImmediateContext) _pImmediateContext->ClearState();
@@ -592,8 +598,8 @@ void Application::Draw()
  
 int Application::Keyboard()
 {
-	if (GetKeyState(VK_CONTROL) & 0x8000 & _keyState == 1)
+	if ((GetKeyState(VK_CONTROL) && 0x8000) && _keyState == 1)
 		return 0;
-	if (GetKeyState(VK_CONTROL) & 0x8000 & _keyState == 0)
+	if ((GetKeyState(VK_CONTROL) && 0x8000) && _keyState == 0)
 		return 1;
 }

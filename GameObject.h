@@ -1,5 +1,5 @@
 #pragma once
-#include "Structures.h"
+#include "Structs.h"
 
 class GameObject
 {

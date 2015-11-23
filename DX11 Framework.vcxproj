@@ -378,6 +378,7 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="DX11 Framework.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="OBJLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DX11 Framework.fx" />
@@ -387,13 +388,18 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="OBJLoader.h" />
     <CLInclude Include="resource.h" />
-    <ClInclude Include="Structures.h" />
+    <ClInclude Include="Structs.h" />
     <ResourceCompile Include="DX11 Framework.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Crate_COLOR.dds" />
     <Image Include="Crate_NRM.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Cube.txt" />
+    <Text Include="Cylinder.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

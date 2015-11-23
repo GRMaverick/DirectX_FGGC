@@ -3,15 +3,13 @@
 #include <windows.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
-#include <directxmath.h>
 #include <directxcolors.h>
+
 #include "resource.h"
-#include "Structures.h"
-#include "GameObject.h"
 #include "Camera.h"
 #include "DDSTextureLoader.h"
-
-using namespace DirectX;
+#include "Structs.h"
+#include "OBJLoader.h"
 
 struct ConstantBuffer
 {
@@ -80,6 +78,9 @@ private:
 	float specularPower;
 	XMFLOAT3 eyePositionW;
 
+	// Mesh Data
+	MeshData _pMeshObject;
+
 private:
 	HRESULT InitWindow(HINSTANCE hInstance, int nCmdShow);
 	HRESULT InitDevice();
@@ -100,6 +101,7 @@ public:
 
 	void Update();
 	void Draw();
+	void InitialiseConstantBufferData();
 
 	int Keyboard();
 };
