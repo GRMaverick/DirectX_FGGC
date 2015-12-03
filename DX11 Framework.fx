@@ -3,11 +3,13 @@
 //
 // Copyright (c) Microsoft Corporation. All rights reserved.
 //--------------------------------------------------------------------------------------
-
 //--------------------------------------------------------------------------------------
 // Constant Buffer Variables
 //--------------------------------------------------------------------------------------
-cbuffer ConstantBuffer : register( b0 )
+Texture2D txDiffuse : register(t0);
+SamplerState samLinear : register(s0);
+
+cbuffer ConstantBuffer : register(b0)
 {
 	matrix World;
 	matrix View;
@@ -22,66 +24,53 @@ cbuffer ConstantBuffer : register( b0 )
 	float SpecularPower;
 	float3 LightVecW;
 }
-
-Texture2D txDiffuse : register(t0);
-SamplerState samLinear : register(s0);
-
-
-struct PS_INPUT
-{
-	float4 Pos : SV_POSITION;
-	float2 Tex : TEXCOORD0;
-};
 //--------------------------------------------------------------------------------------
 struct VS_OUTPUT
 {
-    float4 PosH : SV_POSITION;
+	float4 Pos : SV_POSITION;
 	float3 Normal : NORMAL0;
-	float3 PosW : POSITION;
+	float4 Color : COLOR0;
+	float3 NormalL : NORMAL1;
 	float2 Tex : TEXCOORD0;
 };
-
 VS_OUTPUT VS(float4 Pos : POSITION, float3 NormalL : NORMAL, float2 Tex : TEXCOORD0)
 {
 	VS_OUTPUT output = (VS_OUTPUT)0;
+	output.Pos = mul(Pos, World);
 
-	output.Normal = mul(float4(NormalL, 1.0f), World).xyz;
-	output.Normal = normalize(output.Normal);
+	output.Pos = mul(output.Pos, View);
+	output.Pos = mul(output.Pos, Projection);
 
-	output.PosH = mul(Pos, World);
-	output.PosW = mul(Pos, View);
-	output.PosW = mul(Pos, Projection);
-
+	output.NormalL = NormalL;
 
 	output.Tex = Tex;
 
 	return output;
 }
-
 //--------------------------------------------------------------------------------------
 // Pixel Shader
 //--------------------------------------------------------------------------------------
-float4 PS( VS_OUTPUT input ) : SV_Target
+float4 PS(VS_OUTPUT input) : SV_Target
 {
-	input.Normal = normalize(input.Normal);
+	float3 toEye = normalize(EyePosW - input.Pos.xyz);
+
+	float3 normalW = mul(float4(input.NormalL, 0.0f), World);
+	normalW = normalize(normalW);
+	float3 r = reflect(-LightVecW, normalW);
+
+	float specularAmount = pow(max(dot(r, toEye), 0.0f), SpecularPower);
+	float diffuseAmount = max(dot(LightVecW, normalW), 0.0f);
+
+	float3 ambient = (AmbientMaterial * AmbientLight).rgb;
+
+	float3 diffuse = diffuseAmount * (DiffuseMtrl * DiffuseLight).rgb;
+	float3 specular = specularAmount * (SpecularMtrl * SpecularLight).rgb;
+	float4 Color;
 
 	float4 textureColour = txDiffuse.Sample(samLinear, input.Tex);
 
-	float3 toEye = normalize(EyePosW - input.PosW.xyz);
-
-	float3 r = reflect(-LightVecW, input.Normal);
-
-	float specularAmount = pow(max(dot(r, toEye), 0.0f), SpecularPower);
-	float diffuseAmount = max(dot(LightVecW, input.Normal), 0.0f);
-
-	float3 ambient = (AmbientMaterial * AmbientLight).rgb;
-	float3 diffuse = diffuseAmount * (DiffuseMtrl * DiffuseLight).rgb;
-	float3 specular = specularAmount * (SpecularMtrl * SpecularLight).rgb;
-
-	float4 Color;
-	Color.rgb = diffuse + ambient + specular;
+	Color.rgb = diffuse + ambient + specular + textureColour;
 	Color.a = DiffuseMtrl.a;
 
-	// Ignore Colour Calculations
-	return textureColour;
+	return Color;
 }

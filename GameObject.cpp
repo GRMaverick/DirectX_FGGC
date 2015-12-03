@@ -28,7 +28,8 @@ GameObject::~GameObject(void)
 	if (_pVertexShader) _pVertexShader->Release();
 }
 
-void GameObject::Initialise(MeshData meshData, ID3D11VertexShader* vertexShader){
+void GameObject::Initialise(MeshData meshData, ID3D11VertexShader* vertexShader)
+{
 	_pMesh = meshData;
 	_pVertexShader = vertexShader;
 }
