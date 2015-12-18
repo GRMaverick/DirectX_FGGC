@@ -9,22 +9,58 @@
       <UniqueIdentifier>{2c3d4c8c-5d1a-459a-a05a-a4e4b608a44e}</UniqueIdentifier>
       <Extensions>fx;fxh;hlsl</Extensions>
     </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{96947b8e-8f48-4b57-adb8-36547428141d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header">
+      <UniqueIdentifier>{52b440c7-c485-4e11-adf9-3a6a74faedd2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Application.h" />
-    <ClInclude Include="GameObject.h" />
-    <ClInclude Include="DDSTextureLoader.h" />
-    <ClInclude Include="Structs.h" />
-    <ClInclude Include="OBJLoader.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="Structs.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="HMTerrain.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJLoader.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="DX11 Framework.cpp" />
-    <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="DDSTextureLoader.cpp" />
-    <ClCompile Include="OBJLoader.cpp" />
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="HMTerrain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DX11 Framework.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="OBJLoader.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
@@ -35,6 +71,9 @@
     <None Include="DX11 Framework.fx">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="Textures\CFA44Tex">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DX11 Framework.rc">
@@ -42,11 +81,14 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Crate_COLOR.dds" />
-    <Image Include="Crate_NRM.dds" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Cube.txt" />
-    <Text Include="Cylinder.txt" />
+    <Image Include="height.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Crate_COLOR.dds">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="gbheightmap.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

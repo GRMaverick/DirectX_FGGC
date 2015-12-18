@@ -4,8 +4,8 @@
 class GameObject
 {
 protected: 
-	MeshData _pMesh;
-	ID3D11VertexShader* _pVertexShader;
+	OBJMesh _pMesh;
+	ID3D11ShaderResourceView* _pTextureRV;
 	GameObject* _pParent;
 	char* _pName;
 
@@ -23,7 +23,7 @@ public:
 	GameObject(void);
 	~GameObject(void);
 
-	void Initialise(MeshData meshData, ID3D11VertexShader* _pVertexShader);
+	void Initialise(OBJMesh OBJMesh, ID3D11ShaderResourceView* shaderResourceView);
 	virtual void Update(float elapsedTime);
 	void UpdateWorld();
 	void Draw(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext);

@@ -26,6 +26,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 Application::Application()
 {
 	_pKeyState = 0;
+	_cameraState = 1;
 
 	_hInst = nullptr;
 	_hWnd = nullptr;
@@ -41,13 +42,18 @@ Application::Application()
 	_pVertexBuffer = nullptr;
 	_pIndexBuffer = nullptr;
 	_pConstantBuffer = nullptr;
+	_pTextureRV = nullptr;
+	_pSamplerLinear = nullptr;
 }
 Application::~Application()
 {
 	Cleanup();
 }
+
 HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 {
+	HRESULT result;
+
 	if (FAILED(InitWindow(hInstance, nCmdShow)))
 	{
 		return E_FAIL;
@@ -68,16 +74,45 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	// Initialize the world matrix
 	XMStoreFloat4x4(&_world, XMMatrixIdentity());
 	XMStoreFloat4x4(&_world1, XMMatrixIdentity());
+	XMStoreFloat4x4(&_world3, XMMatrixIdentity());
+	XMStoreFloat4x4(&_planeWorld, XMMatrixIdentity());
+	XMStoreFloat4x4(&_planeWorld2, XMMatrixIdentity());
 
-	// Initialize the view matrix
-	XMVECTOR Eye = XMVectorSet(0.0f, 0.0f, -10.0f, 0.0f);
-	XMVECTOR At = XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
-	XMVECTOR Up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	// Create the sample state
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
-	XMStoreFloat4x4(&_view, XMMatrixLookAtLH(Eye, At, Up));
+	_pd3dDevice->CreateSamplerState(&sampDesc, &_pSamplerLinear);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_COLOR.dds", nullptr, &_pTextureRV);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/CFAPlaneTexture.dds", nullptr, &_pPlaneTexRV);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/F35PlaneTexture.dds", nullptr, &_pPlaneTexRV2);
 
-	// Initialize the projection matrix
-	XMStoreFloat4x4(&_projection, XMMatrixPerspectiveFovLH(XM_PIDIV2, _WindowWidth / (FLOAT)_WindowHeight, 0.01f, 100.0f));
+	_planeMesh = OBJLoader::Load("Objects/CFA44.obj", _pd3dDevice);
+	_planeMesh2 = OBJLoader::Load("Objects/F-35_Lightning_II.obj", _pd3dDevice);
+
+	_planeObject = new GameObject();
+	//_planeObject2 = new GameObject();
+	_pTerrain = new HMTerrain();
+
+	_planeObject->Initialise(_planeMesh, _pPlaneTexRV);
+	//_planeObject->Initialise(_planeMesh2, _pPlaneTexRV2);
+	_pTerrain->Initialise(_pd3dDevice, "height.bmp");
+
+	XMFLOAT4 eye = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 3.0f, _planeObject->GetPosition().z - 15.0, 0.0f);
+	XMFLOAT4 at = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
+	XMFLOAT4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
+
+	FLOAT nearPlane = 0.01f;
+	FLOAT farPlane = 100.0f;
+
+	_camera1 = new Camera(eye, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
 
 	// Initialize the lighting variables
 	// Light direction from surface (XYZ)
@@ -97,21 +132,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	// Specular
 	specularLight = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	// Specular
-	XMStoreFloat3(&eyePosW, Eye);
-
-	// Create the sample state
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	_pd3dDevice->CreateSamplerState(&sampDesc, &_pSamplerLinear);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_COLOR.dds", nullptr, &_pTextureRV);
+	XMStoreFloat3(&eyePosW, XMLoadFloat4(&_camera1->GetEye()));
 
 	return S_OK;
 }
@@ -276,7 +297,7 @@ HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
 
 	// Create window
 	_hInst = hInstance;
-	RECT rc = { 0, 0, 640, 480 };
+	RECT rc = { 0, 0, 1800, 1020 };
 	AdjustWindowRect(&rc, WS_OVERLAPPEDWINDOW, FALSE);
 	_hWnd = CreateWindow(L"TutorialWindowClass", L"DX11 Framework", WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, nullptr, nullptr, hInstance,
@@ -286,6 +307,12 @@ HRESULT Application::InitWindow(HINSTANCE hInstance, int nCmdShow)
 
 	ShowWindow(_hWnd, nCmdShow);
 
+	if (!InitDirectInput(hInstance))
+	{
+		MessageBox(0, L"Direct Input Initialization - Failed",
+			L"Error", MB_OK);
+		return 0;
+	}
 	return S_OK;
 }
 HRESULT Application::CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR szShaderModel, ID3DBlob** ppBlobOut)
@@ -441,12 +468,38 @@ HRESULT Application::InitDevice()
 	wfdesc.CullMode = D3D11_CULL_NONE;
 	hr = _pd3dDevice->CreateRasterizerState(&wfdesc, &_wireFrame);
 
-	CreateDDSTextureFromFile(_pd3dDevice, L"texture.dds", nullptr, &_pTextureRV);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_SPEC.dds", nullptr, &_pTextureRV);
 
 	if (FAILED(hr))
 		return hr;
 
 	return S_OK;
+}
+bool Application::InitDirectInput(HINSTANCE hInstance)
+{
+	bool hr;
+
+	hr = DirectInput8Create(hInstance,
+		DIRECTINPUT_VERSION,
+		IID_IDirectInput8,
+		(void**)&_DirectInput,
+		NULL);
+
+	hr = _DirectInput->CreateDevice(GUID_SysKeyboard,
+		&_DIKeyboard,
+		NULL);
+
+	hr = _DirectInput->CreateDevice(GUID_SysMouse,
+		&_DIMouse,
+		NULL);
+
+	hr = _DIKeyboard->SetDataFormat(&c_dfDIKeyboard);
+	hr = _DIKeyboard->SetCooperativeLevel(_hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+
+	hr = _DIMouse->SetDataFormat(&c_dfDIMouse);
+	hr = _DIMouse->SetCooperativeLevel(_hWnd, DISCL_EXCLUSIVE | DISCL_NOWINKEY | DISCL_FOREGROUND);
+
+	return true;
 }
 
 void Application::Cleanup()
@@ -468,6 +521,7 @@ void Application::Cleanup()
 
 	if (_depthStencilView) _depthStencilView->Release();
 	if (_depthStencilBuffer) _depthStencilBuffer->Release();
+	//if (_pTerrain) _pTerrain->Shutdown();
 }
 void Application::Update()
 {
@@ -492,9 +546,15 @@ void Application::Update()
 	//
 	// Animate the cube
 	//
-	XMStoreFloat4x4(&_world, XMMatrixRotationX(t) * XMMatrixRotationY(t));
+	XMStoreFloat4x4(&_world, XMMatrixRotationY(t));
 	XMStoreFloat4x4(&_world1, XMMatrixRotationZ(t)*XMMatrixTranslation(10.0f, 0.0f, 0.0f)*XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixRotationY(t));
-	XMStoreFloat4x4(&_world2, XMMatrixTranslation(10, 0, 0)* XMMatrixScaling(0.25, 0.25, 0.25)*XMMatrixRotationZ(t * 3)*XMMatrixTranslation(5, 0, 0) * XMMatrixRotationY(t));
+	XMStoreFloat4x4(&_world2, XMMatrixTranslation(10, 0, 0)* XMMatrixScaling(0.25, 0.25, 0.25)*XMMatrixRotationZ(t * 3)*XMMatrixTranslation(5, 0, 0) * XMMatrixRotationY(t)); 
+	XMStoreFloat4x4(&_world3, XMMatrixTranslation(-220.0f, -50.0f, -220.0f));
+
+	DetectInput(t);
+	_planeObject->Update(t);
+	UpdateCamera();
+	GetCamera()->CalculateViewProjection();
 }
 void Application::Draw()
 {
@@ -507,10 +567,27 @@ void Application::Draw()
 	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->PSSetShaderResources(0, 1, &_pTextureRV);
 	_pImmediateContext->ClearDepthStencilView(_depthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	
 
 	XMMATRIX world = XMLoadFloat4x4(&_world);
-	XMMATRIX view = XMLoadFloat4x4(&_view);
-	XMMATRIX projection = XMLoadFloat4x4(&_projection);
+	XMMATRIX view;
+	XMMATRIX projection;
+
+	if (_cameraState == 1)
+	{
+		view = XMLoadFloat4x4(&_camera1->GetView());
+		projection = XMLoadFloat4x4(&_camera1->GetProjection());
+	}
+	if (_cameraState == 2)
+	{
+		view = XMLoadFloat4x4(&_camera2->GetView());
+		projection = XMLoadFloat4x4(&_camera2->GetProjection());
+	}
+	if (_cameraState == 3)
+	{
+		view = XMLoadFloat4x4(&_camera3->GetView());
+		projection = XMLoadFloat4x4(&_camera3->GetProjection());
+	}
 
 	//
 	// Update variables
@@ -539,6 +616,7 @@ void Application::Draw()
 	//
 	// Renders a triangle
 	//
+	_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// Set vertex buffer
 	UINT stride = sizeof(SimpleVertex);
@@ -549,18 +627,29 @@ void Application::Draw()
 
 	_pImmediateContext->VSSetShader(_pVertexShader, nullptr, 0);
 	_pImmediateContext->VSSetConstantBuffers(0, 1, &_pConstantBuffer);
-	_pImmediateContext->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
 	_pImmediateContext->PSSetShader(_pPixelShader, nullptr, 0);
+	_pImmediateContext->PSSetConstantBuffers(0, 1, &_pConstantBuffer);
 	_pImmediateContext->DrawIndexed(36, 0, 0);
 
 	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world1));
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	_pImmediateContext->DrawIndexed(36, 0, 0);
 
-	// Draw Cube 3
 	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world2));
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	_pImmediateContext->DrawIndexed(36, 0, 0);
+
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_planeObject->GetWorld()));
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_planeObject->Draw(_pd3dDevice, _pImmediateContext);
+
+	//cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_planeWorld2));
+	//_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	//_planeObject2->Draw(_pd3dDevice, _pImmediateContext);
+
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world3));
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_pTerrain->Render(_pImmediateContext);
 
 	//
 	// Present our back buffer to our front buffer
@@ -574,4 +663,52 @@ int Application::Keyboard()
 		return 0;
 	if ((GetKeyState(VK_CONTROL) && 0x8000) && _pKeyState == 0)
 		return 1;
+}
+
+Camera* Application::GetCamera()
+{
+	if (_cameraState == 1)
+		return _camera1;
+}
+void Application::UpdateCamState()
+{
+	if ((GetKeyState(VK_NUMPAD1) && 0x8000))
+		_cameraState = 1;
+}
+void Application::UpdateCamera()
+{
+	XMFLOAT4 plane = { _planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f };
+	if (_cameraState == 1)
+	{
+		_camera1->SetAt(plane);
+		_camera1->SetEye(XMFLOAT4(plane.x, plane.y + 5.0f, plane.z +15.0, 0.0f));
+	}
+}
+void Application::DetectInput(float elapsedTime)
+{
+	DIMOUSESTATE mouseCurrState;
+
+	BYTE keyboardState[256];
+
+	_DIKeyboard->Acquire();
+	_DIMouse->Acquire();
+
+	_DIMouse->GetDeviceState(sizeof(DIMOUSESTATE), &mouseCurrState);
+
+	_DIKeyboard->GetDeviceState(sizeof(keyboardState), (LPVOID)&keyboardState);
+
+	if (keyboardState[DIK_ESCAPE] & 0x80)
+		PostMessage(_hWnd, WM_DESTROY, 0, 0);
+
+	if (keyboardState[DIK_W] & 0x80)
+		_planeObject->Move(-0.5);
+	if (keyboardState[DIK_S] & 0x80)
+		_planeObject->Move(0.5);
+	if (keyboardState[DIK_A] & 0x80)
+		_planeObject->SetRotation(0.0f, 0.0f, XM_PI * elapsedTime);
+	if (keyboardState[DIK_D] & 0x80)
+		_planeObject->SetRotation(0.0f, 0.0f, -XM_PI * elapsedTime);
+
+	_mouseLastState = mouseCurrState;
+	return;
 }

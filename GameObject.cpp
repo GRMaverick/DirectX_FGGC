@@ -25,22 +25,22 @@ GameObject::~GameObject(void)
 	delete _pParent;
 	delete _pParent;
 
-	if (_pVertexShader) _pVertexShader->Release();
+	if (_pTextureRV) _pTextureRV->Release();
 }
 
-void GameObject::Initialise(MeshData meshData, ID3D11VertexShader* vertexShader)
+void GameObject::Initialise(OBJMesh OBJMesh, ID3D11ShaderResourceView* shaderResourceView)
 {
-	_pMesh = meshData;
-	_pVertexShader = vertexShader;
+	_pMesh = OBJMesh;
+	_pTextureRV = shaderResourceView;
 }
 void GameObject::Update(float elapsedTime)
 {
-
+	UpdateWorld();
 }
 void GameObject::Draw(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext)
 {
-	pImmediateContext->VSSetShader(_pVertexShader, nullptr, 0);
-	pImmediateContext->IASetVertexBuffers(0, 1, &_pMesh.VertexBuffer, &_pMesh.uIStride, &_pMesh.uIOffset);
+	pImmediateContext->PSSetShaderResources(0, 1, &_pTextureRV);
+	pImmediateContext->IASetVertexBuffers(0, 1, &_pMesh.VertexBuffer, &_pMesh.VBStride, &_pMesh.VBOffset);
 	pImmediateContext->IASetIndexBuffer(_pMesh.IndexBuffer, DXGI_FORMAT_R16_UINT, 0);
 	pImmediateContext->DrawIndexed(_pMesh.IndexCount, 0, 0);
 }
@@ -53,6 +53,12 @@ void GameObject::SetRotation(float x, float y, float z){
 }
 void GameObject::SetTranslation(float x, float y, float z){
 	XMStoreFloat4x4(&_translate, XMMatrixTranslation(x, y, z));
+}
+void GameObject::SetPosition(float x, float y, float z)
+{
+	_position.x = x;
+	_position.y = y;
+	_position.z = z;
 }
 void GameObject::SetWorld(XMMATRIX& transform){
 	XMStoreFloat4x4(&_world, transform);

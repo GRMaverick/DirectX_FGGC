@@ -1,10 +1,10 @@
 #include "OBJLoader.h"
-#include <string>
 
 bool OBJLoader::FindSimilarVertex(const SimpleVertex& vertex, std::map<SimpleVertex, unsigned short>& vertToIndexMap, unsigned short& index)
 {
 	auto it = vertToIndexMap.find(vertex);
-	if(it == vertToIndexMap.end())
+	
+	if (it == vertToIndexMap.end())
 	{
 		return false;
 	}
@@ -15,20 +15,29 @@ bool OBJLoader::FindSimilarVertex(const SimpleVertex& vertex, std::map<SimpleVer
 	}
 }
 
-void OBJLoader::CreateIndices(const std::vector<XMFLOAT3>& inVertices, const std::vector<XMFLOAT2>& inTexCoords, const std::vector<XMFLOAT3>& inNormals, std::vector<unsigned short>& outIndices, std::vector<XMFLOAT3>& outVertices, std::vector<XMFLOAT2>& outTexCoords, std::vector<XMFLOAT3>& outNormals)
+void OBJLoader::CreateIndices(const std::vector<XMFLOAT3>& inVertices, 
+							  const std::vector<XMFLOAT2>& inTexCoords, 
+							  const std::vector<XMFLOAT3>& inNormals, 
+							  std::vector<unsigned short>& outIndices, 
+							  std::vector<XMFLOAT3>& outVertices, 
+							  std::vector<XMFLOAT2>& outTexCoords, 
+							  std::vector<XMFLOAT3>& outNormals)
 {
-	//Mapping from an already-existing SimpleVertex to its corresponding index
+	// Mapping from an already-existing SimpleVertex to its corresponding index
 	std::map<SimpleVertex, unsigned short> vertToIndexMap;
 
 	std::pair<SimpleVertex, unsigned short> pair;
 
 	int numVertices = inVertices.size();
+	
 	for(int i = 0; i < numVertices; ++i) //For each vertex
 	{
-		SimpleVertex vertex = { inVertices[i], inNormals[i],  inTexCoords[i] }; 
+		SimpleVertex vertex = {inVertices[i], inNormals[i],  inTexCoords[i]}; 
 
 		unsigned short index;
-		bool found = FindSimilarVertex(vertex, vertToIndexMap, index); //See if a vertex already exists in the buffer that has the same attributes as this one
+		// See if a vertex already exists in the buffer that has the same attributes as this one
+		bool found = FindSimilarVertex(vertex, vertToIndexMap, index); 
+		
 		if(found) //if found, re-use it's index for the index buffer
 		{
 			outIndices.push_back(index);
@@ -38,14 +47,16 @@ void OBJLoader::CreateIndices(const std::vector<XMFLOAT3>& inVertices, const std
 			outVertices.push_back(vertex.Pos);
 			outTexCoords.push_back(vertex.TexC);
 			outNormals.push_back(vertex.Normal);
-
+			
 			unsigned short newIndex = (unsigned short)outVertices.size() - 1;
+			
 			outIndices.push_back(newIndex);
-
+			
 			//Add it to the map
 			pair.first = vertex;
 			pair.second = newIndex;
-			vertToIndexMap.insert(pair);
+			
+			//vertToIndexMap.insert(pair);
 		}
 	}
 }
@@ -53,7 +64,7 @@ void OBJLoader::CreateIndices(const std::vector<XMFLOAT3>& inVertices, const std
 //WARNING: This code makes a big assumption -- that your models have texture coordinates AND normals which they should have anyway (else you can't do texturing and lighting!)
 //If your .obj file has no lines beginning with "vt" or "vn", then you'll need to change the Export settings in your modelling software so that it exports the texture coordinates 
 //and normals. If you still have no "vt" lines, you'll need to do some texture unwrapping, also known as UV unwrapping.
-MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertTexCoords)
+OBJMesh OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertTexCoords)
 {
 	std::string binaryFilename = filename;
 	binaryFilename.append("Binary");
@@ -67,7 +78,7 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 
 		if(!inFile.good())
 		{
-			return MeshData();
+			return OBJMesh();
 		}
 		else
 		{
@@ -179,7 +190,7 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 
 			CreateIndices(expandedVertices, expandedTexCoords, expandedNormals, meshIndices, meshVertices, meshTexCoords, meshNormals);
 
-			MeshData meshData;
+			OBJMesh OBJMesh;
 
 			//Turn data from vector form to arrays
 			SimpleVertex* finalVerts = new SimpleVertex[meshVertices.size()];
@@ -191,7 +202,7 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 				finalVerts[i].TexC = meshTexCoords[i];
 			}
 
-			//Put data into vertex and index buffers, then pass the relevant data to the MeshData object.
+			//Put data into vertex and index buffers, then pass the relevant data to the OBJMesh object.
 			//The rest of the code will hopefully look familiar to you, as it's similar to whats in your InitVertexBuffer and InitIndexBuffer methods
 			ID3D11Buffer* vertexBuffer;
 
@@ -208,9 +219,9 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 
 			_pd3dDevice->CreateBuffer(&bd, &InitData, &vertexBuffer);
 
-			meshData.VertexBuffer = vertexBuffer;
-			meshData.VBOffset = 0;
-			meshData.VBStride = sizeof(SimpleVertex);
+			OBJMesh.VertexBuffer = vertexBuffer;
+			OBJMesh.VBOffset = 0;
+			OBJMesh.VBStride = sizeof(SimpleVertex);
 
 			unsigned short* indicesArray = new unsigned short[meshIndices.size()];
 			unsigned int numMeshIndices = meshIndices.size();
@@ -239,19 +250,19 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 			InitData.pSysMem = indicesArray;
 			_pd3dDevice->CreateBuffer(&bd, &InitData, &indexBuffer);
 
-			meshData.IndexCount = meshIndices.size();
-			meshData.IndexBuffer = indexBuffer;
+			OBJMesh.IndexCount = meshIndices.size();
+			OBJMesh.IndexBuffer = indexBuffer;
 
 			//This data has now been sent over to the GPU so we can delete this CPU-side stuff
 			delete [] indicesArray;
 			delete [] finalVerts;
 
-			return meshData;
+			return OBJMesh;
 		}	
 	}
 	else
 	{
-		MeshData meshData;
+		OBJMesh OBJMesh;
 		unsigned int numVertices;
 		unsigned int numIndices;
 
@@ -265,7 +276,7 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 		binaryInFile.read((char*)finalVerts, sizeof(SimpleVertex) * numVertices);
 		binaryInFile.read((char*)indices, sizeof(unsigned short) * numIndices);
 
-		//Put data into vertex and index buffers, then pass the relevant data to the MeshData object.
+		//Put data into vertex and index buffers, then pass the relevant data to the OBJMesh object.
 		//The rest of the code will hopefully look familiar to you, as it's similar to whats in your InitVertexBuffer and InitIndexBuffer methods
 		ID3D11Buffer* vertexBuffer;
 
@@ -282,9 +293,9 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 
 		_pd3dDevice->CreateBuffer(&bd, &InitData, &vertexBuffer);
 
-		meshData.VertexBuffer = vertexBuffer;
-		meshData.VBOffset = 0;
-		meshData.VBStride = sizeof(SimpleVertex);
+		OBJMesh.VertexBuffer = vertexBuffer;
+		OBJMesh.VBOffset = 0;
+		OBJMesh.VBStride = sizeof(SimpleVertex);
 
 		ID3D11Buffer* indexBuffer;
 
@@ -298,13 +309,13 @@ MeshData OBJLoader::Load(char* filename, ID3D11Device* _pd3dDevice, bool invertT
 		InitData.pSysMem = indices;
 		_pd3dDevice->CreateBuffer(&bd, &InitData, &indexBuffer);
 
-		meshData.IndexCount = numIndices;
-		meshData.IndexBuffer = indexBuffer;
+		OBJMesh.IndexCount = numIndices;
+		OBJMesh.IndexBuffer = indexBuffer;
 
 		//This data has now been sent over to the GPU so we can delete this CPU-side stuff
 		delete [] indices;
 		delete [] finalVerts;
 
-		return meshData;
+		return OBJMesh;
 	}
 }

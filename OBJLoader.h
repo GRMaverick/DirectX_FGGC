@@ -1,15 +1,12 @@
 #pragma once
-
-#include <Windows.h>	//Needed for xnamath.h
-#include <fstream>		//For loading in an external file
-#include <vector>		//For storing the XMFLOAT3/2 variables
-#include <map>			//For fast searching when re-creating the index buffer
 #include "Structs.h"
+
+using namespace DirectX;
 
 namespace OBJLoader
 {
 	//The only method you'll need to call
-	MeshData Load(char* filename, ID3D11Device* _pd3dDevice, bool invertTexCoords = true);
+	OBJMesh Load(char* filename, ID3D11Device* _pd3dDevice, bool invertTexCoords = true);
 
 	//Helper methods for the above method
 	//Searhes to see if a similar vertex already exists in the buffer -- if true, we re-use that index

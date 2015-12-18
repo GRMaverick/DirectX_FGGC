@@ -68,7 +68,9 @@
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\ImageContentTask.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -378,16 +380,19 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="DX11 Framework.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="HMTerrain.cpp" />
     <ClCompile Include="OBJLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DX11 Framework.fx" />
+    <None Include="Textures\CFA44Tex" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="HMTerrain.h" />
     <ClInclude Include="OBJLoader.h" />
     <CLInclude Include="resource.h" />
     <ClInclude Include="Structs.h" />
@@ -395,12 +400,11 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Crate_COLOR.dds" />
-    <Image Include="Crate_NRM.dds" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Cube.txt" />
-    <Text Include="Cylinder.txt" />
+    <Image Include="gbheightmap.bmp" />
+    <Image Include="height.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\ImageContentTask.targets" />
+  </ImportGroup>
 </Project>
