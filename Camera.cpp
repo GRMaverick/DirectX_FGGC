@@ -43,7 +43,6 @@ void Camera::SetAngleAt(float angle)
 	else if (_angleAt < 0.0f)
 		_angleAt = _angleAt + 6.28f;
 }
-
 void Camera::Reshape(FLOAT windowWidth, FLOAT windowHeight, FLOAT nearDepth, FLOAT farDepth)
 {
 	_windowWidth = windowWidth;

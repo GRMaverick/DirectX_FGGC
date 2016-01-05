@@ -11,7 +11,7 @@ HMTerrain::~HMTerrain()
 {
 }
 
-bool HMTerrain::Initialise(ID3D11Device* pd3dDevice, char* filename)
+bool HMTerrain::Initialise(ID3D11Device* pd3dDevice, char* filename, ID3D11ShaderResourceView* texture)
 {
 	bool result;
 
@@ -27,7 +27,7 @@ bool HMTerrain::Initialise(ID3D11Device* pd3dDevice, char* filename)
 	{
 		for (i = 0; i<_pTerrainWidth; i++)
 		{
-			_pHeightMap[(_pTerrainHeight * j) + i].y /= 3.5f;
+			_pHeightMap[(_pTerrainHeight * j) + i].y /= 3.75f;
 		}
 	}
 
@@ -36,6 +36,8 @@ bool HMTerrain::Initialise(ID3D11Device* pd3dDevice, char* filename)
 
 	if (!result)
 		return false;
+
+	_pTextureRV = texture;
 
 	return true;
 }
@@ -55,9 +57,9 @@ void HMTerrain::Draw(ID3D11DeviceContext* immediateContext)
 	stride = sizeof(VertexType);
 	offset = 0;
 
+	immediateContext->PSSetShaderResources(0, 1, &_pTextureRV);
 	immediateContext->IASetVertexBuffers(0, 1, &_pVertexBuffer, &stride, &offset);
 	immediateContext->IASetIndexBuffer(_pIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-	immediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	immediateContext->DrawIndexed(_pIndexCount, 0, 0);
 }
 

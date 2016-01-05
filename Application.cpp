@@ -27,6 +27,9 @@ Application::Application()
 {
 	_pKeyState = 0;
 	_cameraState = 1;
+	_rotationUD = 0.0f;
+	_rotationLR = 0.0f;
+	_rotationYaw = 0.0f;
 
 	_hInst = nullptr;
 	_hWnd = nullptr;
@@ -75,8 +78,8 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	XMStoreFloat4x4(&_world, XMMatrixIdentity());
 	XMStoreFloat4x4(&_world1, XMMatrixIdentity());
 	XMStoreFloat4x4(&_world3, XMMatrixIdentity());
+	XMStoreFloat4x4(&_world4, XMMatrixIdentity());
 	XMStoreFloat4x4(&_planeWorld, XMMatrixIdentity());
-	XMStoreFloat4x4(&_planeWorld2, XMMatrixIdentity());
 
 	// Create the sample state
 	D3D11_SAMPLER_DESC sampDesc;
@@ -92,27 +95,37 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	_pd3dDevice->CreateSamplerState(&sampDesc, &_pSamplerLinear);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_COLOR.dds", nullptr, &_pTextureRV);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/CFAPlaneTexture.dds", nullptr, &_pPlaneTexRV);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/F35PlaneTexture.dds", nullptr, &_pPlaneTexRV2);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/grass.dds", nullptr, &_pTerrainTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/F35PlaneTexture.dds", nullptr, &_pTreeTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/runway.dds", nullptr, &_pRunwayTexture);
 
 	_planeMesh = OBJLoader::Load("Objects/CFA44.obj", _pd3dDevice);
-	_planeMesh2 = OBJLoader::Load("Objects/F-35_Lightning_II.obj", _pd3dDevice);
+	_pCityMesh = OBJLoader::Load("Objects/F-35_Lightning_II.obj", _pd3dDevice);
 
-	_planeObject = new GameObject();
-	//_planeObject2 = new GameObject();
-	_pTerrain = new HMTerrain();
+	_planeObject = new Aircraft();
+	_pTerrain = new Terrain();
+	_pRunway = new Terrain();
+	_pTree = new Bilboard();
+	_pPlane2 = new GameObject();
 
 	_planeObject->Initialise(_planeMesh, _pPlaneTexRV);
-	//_planeObject->Initialise(_planeMesh2, _pPlaneTexRV2);
-	_pTerrain->Initialise(_pd3dDevice, "height.bmp");
+	_pTerrain->Initialise(_pd3dDevice, _pTerrainTexture, 1024.0, 1024.0, 1024, 1024);
+	_pRunway->Initialise(_pd3dDevice, _pRunwayTexture, 1024.0, 1024.0, 1024, 1024);
+	_pTree->Initialise(_pd3dDevice, 40.0f, 20.0f);
+	_pPlane2->Initialise(_pCityMesh);
 
-	XMFLOAT4 eye = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 3.0f, _planeObject->GetPosition().z - 15.0, 0.0f);
+	XMFLOAT4 eye = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 3.0f, _planeObject->GetPosition().z - 15.0f, 0.0f);
+	XMFLOAT4 eye2 = XMFLOAT4(_planeObject->GetPosition().x - 2, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
 	XMFLOAT4 at = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
 	XMFLOAT4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 	FLOAT nearPlane = 0.01f;
-	FLOAT farPlane = 100.0f;
+	FLOAT farPlane = 300.0f;
 
 	_camera1 = new Camera(eye, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
+	_camera2 = new Camera(eye2, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
+	_camera3 = new Camera(eye, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
+	_camera4 = new Camera(eye, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
 
 	// Initialize the lighting variables
 	// Light direction from surface (XYZ)
@@ -462,40 +475,33 @@ HRESULT Application::InitDevice()
 	hr = _pd3dDevice->CreateBuffer(&bd, nullptr, &_pConstantBuffer);
 
 	// Initialize Rasterizer
-	D3D11_RASTERIZER_DESC wfdesc;
-	ZeroMemory(&wfdesc, sizeof(wfdesc));
-	wfdesc.FillMode = D3D11_FILL_WIREFRAME;
-	wfdesc.CullMode = D3D11_CULL_NONE;
-	hr = _pd3dDevice->CreateRasterizerState(&wfdesc, &_wireFrame);
+	D3D11_RASTERIZER_DESC _wfdesc;
+	ZeroMemory(&_wfdesc, sizeof(_wfdesc));
+	_wfdesc.FillMode = D3D11_FILL_WIREFRAME;
+	_wfdesc.CullMode = D3D11_CULL_NONE;
+	hr = _pd3dDevice->CreateRasterizerState(&_wfdesc, &_wireFrame);
 
-	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_SPEC.dds", nullptr, &_pTextureRV);
+	D3D11_RASTERIZER_DESC solidShapeDesc;
+	ZeroMemory(&solidShapeDesc, sizeof(D3D11_RASTERIZER_DESC));
+	solidShapeDesc.FillMode = D3D11_FILL_SOLID;
+	solidShapeDesc.CullMode = D3D11_CULL_NONE;
+	hr = _pd3dDevice->CreateRasterizerState(&solidShapeDesc, &_solidShape);
 
 	if (FAILED(hr))
 		return hr;
 
 	return S_OK;
 }
+
 bool Application::InitDirectInput(HINSTANCE hInstance)
 {
 	bool hr;
 
-	hr = DirectInput8Create(hInstance,
-		DIRECTINPUT_VERSION,
-		IID_IDirectInput8,
-		(void**)&_DirectInput,
-		NULL);
-
-	hr = _DirectInput->CreateDevice(GUID_SysKeyboard,
-		&_DIKeyboard,
-		NULL);
-
-	hr = _DirectInput->CreateDevice(GUID_SysMouse,
-		&_DIMouse,
-		NULL);
-
+	hr = DirectInput8Create(hInstance,	DIRECTINPUT_VERSION,	IID_IDirectInput8, (void**)&_DirectInput, NULL);
+	hr = _DirectInput->CreateDevice(GUID_SysKeyboard, &_DIKeyboard, NULL);
+	hr = _DirectInput->CreateDevice(GUID_SysMouse, &_DIMouse,	NULL);
 	hr = _DIKeyboard->SetDataFormat(&c_dfDIKeyboard);
 	hr = _DIKeyboard->SetCooperativeLevel(_hWnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
-
 	hr = _DIMouse->SetDataFormat(&c_dfDIMouse);
 	hr = _DIMouse->SetCooperativeLevel(_hWnd, DISCL_EXCLUSIVE | DISCL_NOWINKEY | DISCL_FOREGROUND);
 
@@ -522,6 +528,12 @@ void Application::Cleanup()
 	if (_depthStencilView) _depthStencilView->Release();
 	if (_depthStencilBuffer) _depthStencilBuffer->Release();
 	//if (_pTerrain) _pTerrain->Shutdown();
+
+	delete _pTerrain;
+	delete _pRunway;
+	delete _planeObject;
+	delete _pPlane2;
+	delete _pTree;
 }
 void Application::Update()
 {
@@ -542,17 +554,34 @@ void Application::Update()
 
 		t = (dwTimeCur - dwTimeStart) / 1000.0f;
 	}
+	
+	_newTime = timeGetTime();
+	_deltaTime = (float)(_newTime - _oldTime) / 1000;
+	_oldTime = _newTime;
+
+	if (_deltaTime > 0.016f) _deltaTime = 0.016f;
+	if (_deltaTime < 0.001f) _deltaTime = 0.001f;
+
+	_totalTime += _deltaTime;
 
 	//
 	// Animate the cube
 	//
-	XMStoreFloat4x4(&_world, XMMatrixRotationY(t));
+	XMStoreFloat4x4(&_world, XMMatrixRotationY(2* t));
 	XMStoreFloat4x4(&_world1, XMMatrixRotationZ(t)*XMMatrixTranslation(10.0f, 0.0f, 0.0f)*XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixRotationY(t));
 	XMStoreFloat4x4(&_world2, XMMatrixTranslation(10, 0, 0)* XMMatrixScaling(0.25, 0.25, 0.25)*XMMatrixRotationZ(t * 3)*XMMatrixTranslation(5, 0, 0) * XMMatrixRotationY(t)); 
-	XMStoreFloat4x4(&_world3, XMMatrixTranslation(-220.0f, -50.0f, -220.0f));
+	XMStoreFloat4x4(&_world3, XMMatrixTranslation(0.0f, -50.0f, 0.0f));
+	XMStoreFloat4x4(&_world4, XMMatrixRotationX(-(XM_PI / 2)) * XMMatrixTranslation(5.0f, -49.0f, 0.0f));
 
-	DetectInput(t);
+	DetectInput(_deltaTime);
+
 	_planeObject->Update(t);
+	_planeObject->SetRotation(_rotationUD, _rotationYaw, _rotationLR);
+
+	_pPlane2->Update(t);
+	//_pTree->Update(0.0f, _pd3dDevice, *this->GetCamera());
+	_pRunway->SetTranslation(0.0f, -49.9f, 0.0f);
+	UpdateCamState();
 	UpdateCamera();
 	GetCamera()->CalculateViewProjection();
 }
@@ -562,7 +591,7 @@ void Application::Draw()
 	//
 	// Clear the back buffer
 	//
-	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // red,green,blue,alpha
+	float ClearColor[4] = { 0.0f, 0.25f, 0.65f, 1.0f }; // red,green,blue,alpha
 	_pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);
 	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->PSSetShaderResources(0, 1, &_pTextureRV);
@@ -609,7 +638,7 @@ void Application::Draw()
 	if (Keyboard() == 1)
 		_pImmediateContext->RSSetState(_wireFrame);
 	if (Keyboard() == 0)
-		_pImmediateContext->RSSetState(nullptr);
+		_pImmediateContext->RSSetState(_solidShape);
 
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 
@@ -643,13 +672,23 @@ void Application::Draw()
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	_planeObject->Draw(_pd3dDevice, _pImmediateContext);
 
-	//cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_planeWorld2));
-	//_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	//_planeObject2->Draw(_pd3dDevice, _pImmediateContext);
-
 	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world3));
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	_pTerrain->Render(_pImmediateContext);
+	_pTerrain->Draw(_pd3dDevice, _pImmediateContext);
+
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world4));
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pTreeTexture);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_pPlane2->Draw(_pd3dDevice, _pImmediateContext);
+
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_pRunway->GetWorld()));
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	//_pRunway->Draw(_pd3dDevice, _pImmediateContext);
+
+	//cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world));
+	//_pImmediateContext->PSSetShaderResources(0, 1, &_pTreeTexture);
+	//_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	//_pTree->Draw(_pd3dDevice, _pImmediateContext);
 
 	//
 	// Present our back buffer to our front buffer
@@ -669,26 +708,55 @@ Camera* Application::GetCamera()
 {
 	if (_cameraState == 1)
 		return _camera1;
+	if (_cameraState == 2)
+		return _camera2;
+	if (_cameraState == 3)
+		return _camera3;
+	if (_cameraState == 4)
+		return _camera4;
 }
 void Application::UpdateCamState()
 {
 	if ((GetKeyState(VK_NUMPAD1) && 0x8000))
 		_cameraState = 1;
+	if ((GetKeyState(VK_NUMPAD2) && 0x8000))
+		_cameraState = 2;
+	if ((GetKeyState(VK_NUMPAD3) && 0x8000))
+		_cameraState = 3;
+	if ((GetKeyState(VK_NUMPAD4) && 0x8000))
+		_cameraState = 4;
 }
 void Application::UpdateCamera()
 {
-	XMFLOAT4 plane = { _planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f };
-	if (_cameraState == 1)
-	{
-		_camera1->SetAt(plane);
-		_camera1->SetEye(XMFLOAT4(plane.x, plane.y + 5.0f, plane.z +15.0, 0.0f));
-	}
+	XMFLOAT4 uAt1, uAt2, uAt4;
+	XMFLOAT4 uEye1, uEye2, uEye3, uEye4;
+
+	uAt1 = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
+	uAt2 = XMFLOAT4(0.0f, 0.0f, _planeObject->GetPosition().z - 1, 0.0f);
+	uAt4 = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
+
+	uEye1 = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 6.0f, _planeObject->GetPosition().z + 15.0f, 0.0f);
+	uEye2 = XMFLOAT4(_planeObject->GetPosition().x - 3.0f, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
+	uEye3 = XMFLOAT4(0.0f, -49.5f, 0.0f, 0.0f);
+	uEye4 = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 5.0f, _planeObject->GetPosition().z, 0.0f);
+
+	_camera1->SetAt(uAt1);
+	_camera2->SetAt(uAt2);
+	_camera3->SetAt(uAt1);
+	_camera4->SetAt(uAt4);
+
+	_camera1->SetEye(uEye1);
+	_camera2->SetEye(uEye2);
+	_camera3->SetEye(uEye3);
+	_camera4->SetEye(uEye4);
 }
 void Application::DetectInput(float elapsedTime)
 {
 	DIMOUSESTATE mouseCurrState;
 
 	BYTE keyboardState[256];
+
+	float rollRotation = 0.0f;
 
 	_DIKeyboard->Acquire();
 	_DIMouse->Acquire();
@@ -700,14 +768,44 @@ void Application::DetectInput(float elapsedTime)
 	if (keyboardState[DIK_ESCAPE] & 0x80)
 		PostMessage(_hWnd, WM_DESTROY, 0, 0);
 
-	if (keyboardState[DIK_W] & 0x80)
-		_planeObject->Move(-0.5);
-	if (keyboardState[DIK_S] & 0x80)
-		_planeObject->Move(0.5);
+	if (keyboardState[DIK_E] & 0x80)
+	{
+		_planeObject->SetThrust(_planeObject->GetThrust() - 0.005);
+	}
+	if (keyboardState[DIK_Q] & 0x80)
+	{
+		_planeObject->SetThrust(_planeObject->GetThrust() + 0.005);
+	}
 	if (keyboardState[DIK_A] & 0x80)
-		_planeObject->SetRotation(0.0f, 0.0f, XM_PI * elapsedTime);
+	{
+		_rotationLR += XM_PI / 2 * elapsedTime;
+		if (_rotationLR > 1.0f)
+			_rotationLR = 1.0f;
+		_rotationYaw += 1.0f * elapsedTime;
+		//_planeObject->SetPosition((_planeObject->GetPosition().x - 2.5) * cos(0.1f) - (_planeObject->GetPosition().z - 2.5) * sin(0.1f), _planeObject->GetPosition().y, (_planeObject->GetPosition().z - 2.5 * cos(0.1f) + (_planeObject->GetPosition().x - 2.5) * sin(0.1f)));
+	}
 	if (keyboardState[DIK_D] & 0x80)
-		_planeObject->SetRotation(0.0f, 0.0f, -XM_PI * elapsedTime);
+	{
+		_rotationLR -= XM_PI / 2 * elapsedTime;
+		if (_rotationLR < -1.0f)
+			_rotationLR = -1.0f;
+		_rotationYaw -= 1.0f * elapsedTime;
+		//_planeObject->SetPosition((_planeObject->GetPosition().x - 0.5) * cos(0.1f) + (_planeObject->GetPosition().z - 0.5) * sin(0.1f), _planeObject->GetPosition().y, (_planeObject->GetPosition().z - 0.5) * cos(0.1f) - (_planeObject->GetPosition().x - 0.5) * sin(0.1f));
+	}
+	if (keyboardState[DIK_W] & 0x80)
+	{
+		//_planeObject->UpMovement(-0.5f);
+		_rotationUD -= (XM_PI) / 2 * elapsedTime;
+		if (_rotationUD < -1.0f)
+			_rotationUD = -1.0f;
+	}
+	if (keyboardState[DIK_S] & 0x80)
+	{
+		//_planeObject->UpMovement(0.5f);
+		_rotationUD += (XM_PI) / 2 * elapsedTime;		
+		if (_rotationUD > 1.0f)
+			_rotationUD = 1.0f;
+	}
 
 	_mouseLastState = mouseCurrState;
 	return;

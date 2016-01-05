@@ -23,9 +23,6 @@
     <ClInclude Include="DDSTextureLoader.h">
       <Filter>Header</Filter>
     </ClInclude>
-    <ClInclude Include="GameObject.h">
-      <Filter>Header</Filter>
-    </ClInclude>
     <ClInclude Include="HMTerrain.h">
       <Filter>Header</Filter>
     </ClInclude>
@@ -38,12 +35,22 @@
     <ClInclude Include="OBJLoader.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="Aircraft.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Loader.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Terrain.h">
+      <Filter>Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Bilboard.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HMTerrain.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
-    <ClCompile Include="GameObject.cpp">
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="DX11 Framework.cpp">
@@ -61,6 +68,19 @@
     <ClCompile Include="OBJLoader.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="Aircraft.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Loader.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Terrain.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Bilboard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
@@ -74,6 +94,10 @@
     <None Include="Textures\CFA44Tex">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Objects\terrainmap.raw">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DX11 Framework.rc">
@@ -87,7 +111,13 @@
     <Image Include="Crate_COLOR.dds">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="gbheightmap.bmp">
+    <Image Include="Textures\grass.dds">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Textures\ptree.dds">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Textures\runway.dds">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

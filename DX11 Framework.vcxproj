@@ -376,23 +376,33 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Bilboard.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="DX11 Framework.cpp" />
+    <ClCompile Include="Aircraft.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="HMTerrain.cpp" />
+    <ClCompile Include="Loader.cpp" />
     <ClCompile Include="OBJLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="DX11 Framework.fx" />
+    <None Include="Objects\terrainmap.raw" />
     <None Include="Textures\CFA44Tex" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Bilboard.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader.h" />
+    <ClInclude Include="Aircraft.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="Terrain.h" />
     <ClInclude Include="HMTerrain.h" />
+    <ClInclude Include="Loader.h" />
     <ClInclude Include="OBJLoader.h" />
     <CLInclude Include="resource.h" />
     <ClInclude Include="Structs.h" />
@@ -400,8 +410,10 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Crate_COLOR.dds" />
-    <Image Include="gbheightmap.bmp" />
     <Image Include="height.bmp" />
+    <Image Include="Textures\grass.dds" />
+    <Image Include="Textures\ptree.dds" />
+    <Image Include="Textures\runway.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

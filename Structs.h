@@ -5,10 +5,11 @@
 #include <d3dcompiler.h>
 #include <directxmath.h>
 #include <directxcolors.h>
-#include <fstream>						//For loading in an external file
-#include <vector>							//For storing the XMFLOAT3/2 variables
+#include <fstream>				
+#include <vector>	
 #include <map>	
-#include <string>							//For fast searching when re-creating the index buffer
+#include <string>
+#include <random>
 
 using namespace std;
 using namespace DirectX;

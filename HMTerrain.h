@@ -11,6 +11,7 @@ private:
 
 	HeightMapType*	_pHeightMap;
 
+	ID3D11ShaderResourceView* _pTextureRV;
 
 	bool							LoadHeightMap(char* filename);
 	bool							InitialiseBuffers(ID3D11Device* pd3dDevice);
@@ -24,7 +25,7 @@ public:
 	HMTerrain();
 	~HMTerrain();
 
-	bool							Initialise(ID3D11Device* pd3dDevice, char* filename);
+	bool							Initialise(ID3D11Device* pd3dDevice, char* filename, ID3D11ShaderResourceView* texture);
 
 	void							Cleanup();
 	void							Draw(ID3D11DeviceContext* immediateContext);

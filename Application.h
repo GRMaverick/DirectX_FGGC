@@ -16,8 +16,10 @@
 #include "OBJLoader.h"
 #include "Structs.h"
 #include "HMTerrain.h"
+#include "Terrain.h"
 #include "Camera.h"
-#include "GameObject.h"
+#include "Aircraft.h"
+#include "Bilboard.h"
 
 using namespace std;
 using namespace DirectX;
@@ -39,9 +41,12 @@ private:
 	ID3D11VertexShader*							_pVertexShader;
 	ID3D11PixelShader*							_pPixelShader;
 	ID3D11InputLayout*								_pVertexLayout;
+
 	ID3D11ShaderResourceView *			_pTextureRV;
 	ID3D11ShaderResourceView*			_pPlaneTexRV;
-	ID3D11ShaderResourceView*			_pPlaneTexRV2;
+	ID3D11ShaderResourceView*			_pTerrainTexture;
+	ID3D11ShaderResourceView*			_pTreeTexture;
+	ID3D11ShaderResourceView*			_pRunwayTexture;
 
 	ID3D11Buffer*										_pVertexBuffer;
 	ID3D11Buffer*										_pVertexBufferPyramid;
@@ -51,15 +56,16 @@ private:
 
 	XMFLOAT4X4										_world;
 	XMFLOAT4X4										_planeWorld;
-	XMFLOAT4X4										_planeWorld2;
 	XMFLOAT4X4										_world1;
 	XMFLOAT4X4										_world2;
 	XMFLOAT4X4										_world3;
+	XMFLOAT4X4										_world4;
 	XMFLOAT4X4										_view;
 	XMFLOAT4X4										_projection;
 
 	ID3D11RasterizerState*						_wireFrame;
-	D3D11_RASTERIZER_DESC			wfdesc;
+	D3D11_RASTERIZER_DESC			_wfdesc;
+	ID3D11RasterizerState*						_solidShape;
 	vector<XMFLOAT4X4 *>						_objects;
 	ID3D11SamplerState *							_pSamplerLinear;
 
@@ -79,21 +85,35 @@ private:
 	Camera*													_camera1;
 	Camera*													_camera2;
 	Camera*													_camera3;
+	Camera*													_camera4;
 
 	int															_pKeyState;
 	int															_cameraState;
 
-	IDirectInputDevice8*							_DIKeyboard;
-	IDirectInputDevice8*							_DIMouse;
+	IDirectInputDevice8*								_DIKeyboard;
+	IDirectInputDevice8*								_DIMouse;
 	DIMOUSESTATE									_mouseLastState;
 	LPDIRECTINPUT8								_DirectInput;
 
+	// **************** UPDATE VARIABLES **************** //	
+	float															_newTime;
+	float															_oldTime;
+	float															_deltaTime;
+	float															_totalTime;
+	float															_frameCounter;
+	// ************************************************************//
+
 	// *********** GAME OBJECT VARIABLES *********** //
-	HMTerrain*												_pTerrain;
+	Terrain*													_pTerrain;
+	Terrain*													_pRunway;
 	OBJMesh												_planeMesh;
-	OBJMesh												_planeMesh2;		
-	GameObject*											_planeObject;
-	GameObject*											_planeObject2;
+	OBJMesh												_pCityMesh;
+	Aircraft*													_planeObject;
+	GameObject*											_pPlane2;
+	Bilboard*												_pTree;
+	float															_rotationUD;
+	float															_rotationLR;
+	float															_rotationYaw;
 	// ************************************************************//
 
 	// ********************** METHODS *********************** //
