@@ -74,7 +74,10 @@ void Aircraft::SetWorld(XMMATRIX& transform){
 }
 void Aircraft::SetThrust(float thrust)
 {
-	_thrust = thrust;
+	if (thrust >= 1.0f)
+		_thrust = 1.0f;
+	else
+		_thrust = thrust;
 }
 
 XMFLOAT4X4 Aircraft::GetWorld(){
@@ -132,23 +135,27 @@ void Aircraft::UpdateWorld(){
 	_world(3, 3) = 1.0f;
 }
 void Aircraft::Move(){
-	XMVECTOR moveVec = XMVectorReplicate(_thrust);
-	XMVECTOR look = XMLoadFloat3(&_look);
-	XMVECTOR position = XMLoadFloat3(&_position);
+	_movementVector = XMVectorReplicate(_thrust);
+	_lookVector = XMLoadFloat3(&_look);
+	_positionVector = XMLoadFloat3(&_position);
 
-	XMStoreFloat3(&_position, XMVectorMultiplyAdd(moveVec, look, position));
+	XMStoreFloat3(&_position, XMVectorMultiplyAdd(_movementVector, _lookVector, _positionVector));
 }
 void Aircraft::Strafe(float movement)
 {
-	this->_position.x += movement;
+	_movementVector = XMVectorReplicate(_thrust);
+	_rightVector = XMLoadFloat3(&_right);
+	_positionVector = XMLoadFloat3(&_position);
+
+	XMStoreFloat3(&_position, XMVectorMultiplyAdd(_movementVector, _rightVector, _positionVector));
 }
 void Aircraft::UpMovement(float movement)
 {
-	XMVECTOR moveVec = XMVectorReplicate(movement);
-	XMVECTOR up = XMLoadFloat3(&_up);
-	XMVECTOR position = XMLoadFloat3(&_position);
+	_movementVector = XMVectorReplicate(movement);
+	_upVector = XMLoadFloat3(&_up);
+	_positionVector = XMLoadFloat3(&_position);
 
-	XMStoreFloat3(&_position, XMVectorMultiplyAdd(moveVec, up, position));
+	XMStoreFloat3(&_position, XMVectorMultiplyAdd(_movementVector, _upVector, _positionVector));
 }
 void Aircraft::Rotate(float yaw, float pitch, float roll){
 	XMStoreFloat4x4(&_rotate, XMMatrixRotationRollPitchYaw(yaw, pitch, roll));

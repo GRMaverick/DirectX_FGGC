@@ -7,6 +7,8 @@
 #include <windows.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
+#include <d2d1.h>
+#include <dwrite.h>
 #include <directxmath.h>
 #include <directxcolors.h>
 
@@ -17,6 +19,7 @@
 #include "Structs.h"
 #include "HMTerrain.h"
 #include "Terrain.h"
+#include "Runway.h"
 #include "Camera.h"
 #include "Aircraft.h"
 #include "Bilboard.h"
@@ -47,6 +50,7 @@ private:
 	ID3D11ShaderResourceView*			_pTerrainTexture;
 	ID3D11ShaderResourceView*			_pTreeTexture;
 	ID3D11ShaderResourceView*			_pRunwayTexture;
+	ID3D11ShaderResourceView*			_pTowerTexture;
 
 	ID3D11Buffer*										_pVertexBuffer;
 	ID3D11Buffer*										_pVertexBufferPyramid;
@@ -55,11 +59,13 @@ private:
 	ID3D11Buffer*										_pConstantBuffer; 
 
 	XMFLOAT4X4										_world;
-	XMFLOAT4X4										_planeWorld;
 	XMFLOAT4X4										_world1;
 	XMFLOAT4X4										_world2;
 	XMFLOAT4X4										_world3;
 	XMFLOAT4X4										_world4;
+	XMFLOAT4X4										_world5;
+	XMFLOAT4X4										_world6;
+	XMFLOAT4X4										_planeWorld;
 	XMFLOAT4X4										_view;
 	XMFLOAT4X4										_projection;
 
@@ -79,6 +85,7 @@ private:
 	XMFLOAT4											specularLight;
 	XMFLOAT3											eyePosW;
 
+	// *************** CAMERA VARIABLES *************** //	
 	UINT														_WindowHeight;
 	UINT														_WindowWidth;
 
@@ -86,7 +93,9 @@ private:
 	Camera*													_camera2;
 	Camera*													_camera3;
 	Camera*													_camera4;
+	// ************************************************************//
 
+	// ***************** INPUT VARIABLES ***************** //	
 	int															_pKeyState;
 	int															_cameraState;
 
@@ -94,6 +103,7 @@ private:
 	IDirectInputDevice8*								_DIMouse;
 	DIMOUSESTATE									_mouseLastState;
 	LPDIRECTINPUT8								_DirectInput;
+	// ************************************************************//
 
 	// **************** UPDATE VARIABLES **************** //	
 	float															_newTime;
@@ -104,13 +114,19 @@ private:
 	// ************************************************************//
 
 	// *********** GAME OBJECT VARIABLES *********** //
-	Terrain*													_pTerrain;
-	Terrain*													_pRunway;
-	OBJMesh												_planeMesh;
+	OBJMesh												_pPlaneMesh;
 	OBJMesh												_pCityMesh;
+	OBJMesh												_pTreeMesh;
+	OBJMesh												_pTowerMesh;
+
+	Terrain*													_pTerrain; 
+	Runway*													_pRunway;
+
 	Aircraft*													_planeObject;
+
 	GameObject*											_pPlane2;
-	Bilboard*												_pTree;
+	GameObject*											_pTower;
+
 	float															_rotationUD;
 	float															_rotationLR;
 	float															_rotationYaw;
@@ -124,6 +140,7 @@ private:
 	HRESULT												InitVertexBuffer();
 	HRESULT												InitIndexBuffer();
 	bool															InitDirectInput(HINSTANCE hInstance);
+	bool															InitDirectText();
 	void															DetectInput(float elapsedTime);
 
 	int															Keyboard();

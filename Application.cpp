@@ -79,13 +79,13 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	XMStoreFloat4x4(&_world1, XMMatrixIdentity());
 	XMStoreFloat4x4(&_world3, XMMatrixIdentity());
 	XMStoreFloat4x4(&_world4, XMMatrixIdentity());
+	XMStoreFloat4x4(&_world5, XMMatrixIdentity());
 	XMStoreFloat4x4(&_planeWorld, XMMatrixIdentity());
 
 	// Create the sample state
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
@@ -93,26 +93,28 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 
 	_pd3dDevice->CreateSamplerState(&sampDesc, &_pSamplerLinear);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Crate_COLOR.dds", nullptr, &_pTextureRV);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Crate_COLOR.dds", nullptr, &_pTextureRV);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/CFAPlaneTexture.dds", nullptr, &_pPlaneTexRV);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/grass.dds", nullptr, &_pTerrainTexture);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/F35PlaneTexture.dds", nullptr, &_pTreeTexture);
-	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/runway.dds", nullptr, &_pRunwayTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/ground2.dds", nullptr, &_pRunwayTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Tower.dds", nullptr, &_pTowerTexture);
 
-	_planeMesh = OBJLoader::Load("Objects/CFA44.obj", _pd3dDevice);
+	_pPlaneMesh = OBJLoader::Load("Objects/CFA44.obj", _pd3dDevice);
 	_pCityMesh = OBJLoader::Load("Objects/F-35_Lightning_II.obj", _pd3dDevice);
+	_pTowerMesh = OBJLoader::Load("Objects/tower.obj", _pd3dDevice, true);
 
-	_planeObject = new Aircraft();
+	_planeObject = new Aircraft(); _planeObject->SetPosition(0.0f, -48.9f, 500.0f);
 	_pTerrain = new Terrain();
-	_pRunway = new Terrain();
-	_pTree = new Bilboard();
+	_pRunway = new Runway();
 	_pPlane2 = new GameObject();
+	_pTower = new GameObject();
 
-	_planeObject->Initialise(_planeMesh, _pPlaneTexRV);
-	_pTerrain->Initialise(_pd3dDevice, _pTerrainTexture, 1024.0, 1024.0, 1024, 1024);
-	_pRunway->Initialise(_pd3dDevice, _pRunwayTexture, 1024.0, 1024.0, 1024, 1024);
-	_pTree->Initialise(_pd3dDevice, 40.0f, 20.0f);
+	_planeObject->Initialise(_pPlaneMesh, _pPlaneTexRV);
+	_pTerrain->Initialise(_pd3dDevice, _pTerrainTexture, 2048.0f, 2048.0f, 2048, 2048);
 	_pPlane2->Initialise(_pCityMesh);
+	_pTower->Initialise(_pTowerMesh);
+	_pRunway->Initialise(_pd3dDevice, _pRunwayTexture, 65.0, 300.0f, 65, 300);
 
 	XMFLOAT4 eye = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 3.0f, _planeObject->GetPosition().z - 15.0f, 0.0f);
 	XMFLOAT4 eye2 = XMFLOAT4(_planeObject->GetPosition().x - 2, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
@@ -140,7 +142,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	ambientLight = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
 	// Specular
 	specularPower = 5.0f;
-	// Specu;ar
+	// Specular
 	specularMaterial = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 	// Specular
 	specularLight = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -527,13 +529,11 @@ void Application::Cleanup()
 
 	if (_depthStencilView) _depthStencilView->Release();
 	if (_depthStencilBuffer) _depthStencilBuffer->Release();
-	//if (_pTerrain) _pTerrain->Shutdown();
 
 	delete _pTerrain;
 	delete _pRunway;
 	delete _planeObject;
 	delete _pPlane2;
-	delete _pTree;
 }
 void Application::Update()
 {
@@ -570,17 +570,19 @@ void Application::Update()
 	XMStoreFloat4x4(&_world, XMMatrixRotationY(2* t));
 	XMStoreFloat4x4(&_world1, XMMatrixRotationZ(t)*XMMatrixTranslation(10.0f, 0.0f, 0.0f)*XMMatrixScaling(0.5f, 0.5f, 0.5f)*XMMatrixRotationY(t));
 	XMStoreFloat4x4(&_world2, XMMatrixTranslation(10, 0, 0)* XMMatrixScaling(0.25, 0.25, 0.25)*XMMatrixRotationZ(t * 3)*XMMatrixTranslation(5, 0, 0) * XMMatrixRotationY(t)); 
+
 	XMStoreFloat4x4(&_world3, XMMatrixTranslation(0.0f, -50.0f, 0.0f));
-	XMStoreFloat4x4(&_world4, XMMatrixRotationX(-(XM_PI / 2)) * XMMatrixTranslation(5.0f, -49.0f, 0.0f));
+	XMStoreFloat4x4(&_world4, XMMatrixRotationX(-(XM_PI / 2)) * XMMatrixRotationY(XM_PI / 4) * XMMatrixTranslation(30.0f, -49.5f, 495.0f));
+	XMStoreFloat4x4(&_world5, XMMatrixTranslation(0.0f, -49.9f, 435.0f));
+	XMStoreFloat4x4(&_world6, XMMatrixTranslation(30.0f, -49.9f, 475.0f));
 
 	DetectInput(_deltaTime);
 
 	_planeObject->Update(t);
 	_planeObject->SetRotation(_rotationUD, _rotationYaw, _rotationLR);
 
-	_pPlane2->Update(t);
-	//_pTree->Update(0.0f, _pd3dDevice, *this->GetCamera());
-	_pRunway->SetTranslation(0.0f, -49.9f, 0.0f);
+	_pPlane2->Update(_deltaTime);
+	_pTower->Update(_deltaTime);
 	UpdateCamState();
 	UpdateCamera();
 	GetCamera()->CalculateViewProjection();
@@ -591,7 +593,7 @@ void Application::Draw()
 	//
 	// Clear the back buffer
 	//
-	float ClearColor[4] = { 0.0f, 0.25f, 0.65f, 1.0f }; // red,green,blue,alpha
+	float ClearColor[4] = { 0.5f, 0.5f, 0.5f, 1.0f }; // red,green,blue,alpha
 	_pImmediateContext->ClearRenderTargetView(_pRenderTargetView, ClearColor);
 	_pImmediateContext->PSSetSamplers(0, 1, &_pSamplerLinear);
 	_pImmediateContext->PSSetShaderResources(0, 1, &_pTextureRV);
@@ -681,14 +683,15 @@ void Application::Draw()
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	_pPlane2->Draw(_pd3dDevice, _pImmediateContext);
 
-	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_pRunway->GetWorld()));
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world5));
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	//_pRunway->Draw(_pd3dDevice, _pImmediateContext);
+	_pRunway->Draw(_pd3dDevice, _pImmediateContext);
 
-	//cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world));
-	//_pImmediateContext->PSSetShaderResources(0, 1, &_pTreeTexture);
-	//_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
-	//_pTree->Draw(_pd3dDevice, _pImmediateContext);
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_world6));
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pTowerTexture);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_pTower->Draw(_pd3dDevice, _pImmediateContext);
+
 
 	//
 	// Present our back buffer to our front buffer
@@ -770,11 +773,11 @@ void Application::DetectInput(float elapsedTime)
 
 	if (keyboardState[DIK_E] & 0x80)
 	{
-		_planeObject->SetThrust(_planeObject->GetThrust() - 0.005);
+		_planeObject->SetThrust(_planeObject->GetThrust() - 0.0025);
 	}
 	if (keyboardState[DIK_Q] & 0x80)
 	{
-		_planeObject->SetThrust(_planeObject->GetThrust() + 0.005);
+		_planeObject->SetThrust(_planeObject->GetThrust() + 0.0025);
 	}
 	if (keyboardState[DIK_A] & 0x80)
 	{
@@ -794,14 +797,12 @@ void Application::DetectInput(float elapsedTime)
 	}
 	if (keyboardState[DIK_W] & 0x80)
 	{
-		//_planeObject->UpMovement(-0.5f);
 		_rotationUD -= (XM_PI) / 2 * elapsedTime;
 		if (_rotationUD < -1.0f)
 			_rotationUD = -1.0f;
 	}
 	if (keyboardState[DIK_S] & 0x80)
 	{
-		//_planeObject->UpMovement(0.5f);
 		_rotationUD += (XM_PI) / 2 * elapsedTime;		
 		if (_rotationUD > 1.0f)
 			_rotationUD = 1.0f;

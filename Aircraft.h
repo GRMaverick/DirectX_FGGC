@@ -4,22 +4,31 @@
 class Aircraft
 {
 protected: 
+	float _thrust;
+	char* _pName;
+
+	Aircraft* _pParent;
 	OBJMesh _pMesh;
 	ID3D11ShaderResourceView* _pTextureRV;
-	Aircraft* _pParent;
-	char* _pName;
-	float _thrust;
 
-	XMFLOAT3 _position;
 	XMFLOAT3 _up;
 	XMFLOAT3 _right;
 	XMFLOAT3 _look;
 	XMFLOAT3 _rotation;
+	XMFLOAT3 _position;
 
 	XMFLOAT4X4 _world;
 	XMFLOAT4X4 _scale;
 	XMFLOAT4X4 _rotate;
 	XMFLOAT4X4 _translate;
+
+	XMVECTOR _upVector;
+	XMVECTOR _rightVector;
+	XMVECTOR _lookVector;
+	XMVECTOR _positionVector;
+	XMVECTOR _movementVector;
+
+	XMVECTOR _rotationVector;
 
 public:
 	Aircraft(void);

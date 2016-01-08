@@ -48,6 +48,9 @@
       <Filter>Header</Filter>
     </ClInclude>
     <ClInclude Include="Bilboard.h" />
+    <ClInclude Include="Runway.h">
+      <Filter>Header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HMTerrain.cpp">
@@ -81,6 +84,9 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="Bilboard.cpp" />
+    <ClCompile Include="Runway.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">
@@ -117,7 +123,7 @@
     <Image Include="Textures\ptree.dds">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="Textures\runway.dds">
+    <Image Include="Textures\ground2.dds">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -382,6 +382,7 @@
     <ClCompile Include="DX11 Framework.cpp" />
     <ClCompile Include="Aircraft.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="Runway.cpp" />
     <ClCompile Include="Terrain.cpp" />
     <ClCompile Include="HMTerrain.cpp" />
     <ClCompile Include="Loader.cpp" />
@@ -400,6 +401,7 @@
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Aircraft.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="Runway.h" />
     <ClInclude Include="Terrain.h" />
     <ClInclude Include="HMTerrain.h" />
     <ClInclude Include="Loader.h" />
@@ -412,8 +414,8 @@
     <Image Include="Crate_COLOR.dds" />
     <Image Include="height.bmp" />
     <Image Include="Textures\grass.dds" />
+    <Image Include="Textures\ground2.dds" />
     <Image Include="Textures\ptree.dds" />
-    <Image Include="Textures\runway.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

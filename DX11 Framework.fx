@@ -56,6 +56,7 @@ float4 PS(VS_OUTPUT input) : SV_Target
 
 	float3 normalW = mul(float4(input.NormalL, 0.0f), World);
 	normalW = normalize(normalW);
+
 	float3 r = reflect(-LightVecW, normalW);
 
 	float specularAmount = pow(max(dot(r, toEye), 0.0f), SpecularPower);
