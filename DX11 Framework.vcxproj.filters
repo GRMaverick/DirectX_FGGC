@@ -51,6 +51,7 @@
     <ClInclude Include="Runway.h">
       <Filter>Header</Filter>
     </ClInclude>
+    <ClInclude Include="FogFX.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="HMTerrain.cpp">
@@ -87,6 +88,7 @@
     <ClCompile Include="Runway.cpp">
       <Filter>Source</Filter>
     </ClCompile>
+    <ClCompile Include="FogFX.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CLInclude Include="resource.h">

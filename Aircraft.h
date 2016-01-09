@@ -60,6 +60,7 @@ public:
 	XMFLOAT3 GetUp() { return _up; }
 	XMFLOAT3 GetRight() { return _right; }
 	float GetThrust() const { return _thrust; }
+	int GetIndexCount() const { return _pMesh.IndexCount; }
 
 	void Move();
 	void Strafe(float movement);

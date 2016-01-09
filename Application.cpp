@@ -99,22 +99,26 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/F35PlaneTexture.dds", nullptr, &_pTreeTexture);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/ground2.dds", nullptr, &_pRunwayTexture);
 	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/Tower.dds", nullptr, &_pTowerTexture);
+	CreateDDSTextureFromFile(_pd3dDevice, L"Textures/DuskSky.dds", nullptr, &_pSkySphereTexture);
 
 	_pPlaneMesh = OBJLoader::Load("Objects/CFA44.obj", _pd3dDevice);
 	_pCityMesh = OBJLoader::Load("Objects/F-35_Lightning_II.obj", _pd3dDevice);
 	_pTowerMesh = OBJLoader::Load("Objects/tower.obj", _pd3dDevice, true);
+	_pSkySphereMesh = OBJLoader::Load("Objects/sphere.obj", _pd3dDevice);
 
 	_planeObject = new Aircraft(); _planeObject->SetPosition(0.0f, -48.9f, 500.0f);
 	_pTerrain = new Terrain();
 	_pRunway = new Runway();
 	_pPlane2 = new GameObject();
 	_pTower = new GameObject();
+	_pSkySphere = new GameObject();
 
 	_planeObject->Initialise(_pPlaneMesh, _pPlaneTexRV);
-	_pTerrain->Initialise(_pd3dDevice, _pTerrainTexture, 2048.0f, 2048.0f, 2048, 2048);
+	_pTerrain->Initialise(_pd3dDevice, _pTerrainTexture, 1024.0f, 1024.0f, 1024, 1024);
 	_pPlane2->Initialise(_pCityMesh);
 	_pTower->Initialise(_pTowerMesh);
 	_pRunway->Initialise(_pd3dDevice, _pRunwayTexture, 65.0, 300.0f, 65, 300);
+	_pSkySphere->Initialise(_pSkySphereMesh);
 
 	XMFLOAT4 eye = XMFLOAT4(_planeObject->GetPosition().x, _planeObject->GetPosition().y + 3.0f, _planeObject->GetPosition().z - 15.0f, 0.0f);
 	XMFLOAT4 eye2 = XMFLOAT4(_planeObject->GetPosition().x - 2, _planeObject->GetPosition().y, _planeObject->GetPosition().z, 0.0f);
@@ -122,7 +126,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	XMFLOAT4 up = { 0.0f, 1.0f, 0.0f, 0.0f };
 
 	FLOAT nearPlane = 0.01f;
-	FLOAT farPlane = 300.0f;
+	FLOAT farPlane = 2048.0f;
 
 	_camera1 = new Camera(eye, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
 	_camera2 = new Camera(eye2, at, up, _WindowWidth, _WindowHeight, nearPlane, farPlane);
@@ -133,13 +137,13 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	// Light direction from surface (XYZ)
 	lightDirection = XMFLOAT3(0.25f, 0.5f, -1.0f);
 	// Lighting material properties (RGBA)
-	diffuseMaterial = XMFLOAT4(0.8f, 0.5f, 0.5f, 1.0f);
+	diffuseMaterial = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	// Light colour (RGBA)
-	diffuseLight = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	diffuseLight = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	// Ambient 
-	ambientMaterial = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	ambientMaterial = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	// Ambient
-	ambientLight = XMFLOAT4(0.2f, 0.2f, 0.2f, 1.0f);
+	ambientLight = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
 	// Specular
 	specularPower = 5.0f;
 	// Specular
@@ -147,7 +151,7 @@ HRESULT Application::Initialise(HINSTANCE hInstance, int nCmdShow)
 	// Specular
 	specularLight = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
 	// Specular
-	XMStoreFloat3(&eyePosW, XMLoadFloat4(&_camera1->GetEye()));
+	XMStoreFloat3(&eyePosW, XMLoadFloat4(&GetCamera()->GetEye()));
 
 	return S_OK;
 }
@@ -335,13 +339,13 @@ HRESULT Application::CompileShaderFromFile(WCHAR* szFileName, LPCSTR szEntryPoin
 	HRESULT hr = S_OK;
 
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-#if defined(DEBUG) || defined(_DEBUG)
+	#if defined(DEBUG) || defined(_DEBUG)
 	// Set the D3DCOMPILE_DEBUG flag to embed debug information in the shaders.
 	// Setting this flag improves the shader debugging experience, but still allows 
 	// the shaders to be optimized and to run exactly the way they will run in 
 	// the release configuration of this program.
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
-#endif
+	#endif
 
 	ID3DBlob* pErrorBlob;
 	hr = D3DCompileFromFile(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
@@ -534,6 +538,7 @@ void Application::Cleanup()
 	delete _pRunway;
 	delete _planeObject;
 	delete _pPlane2;
+	//delete _pFog;
 }
 void Application::Update()
 {
@@ -583,6 +588,9 @@ void Application::Update()
 
 	_pPlane2->Update(_deltaTime);
 	_pTower->Update(_deltaTime);
+	_pSkySphere->SetScale(1024.0f, 1024.0f, 1024.0f);  _pSkySphere->Update(_deltaTime);
+	_pSkySphere->SetRotation(0.0f, t * 0.05f, -XM_PI / 2);
+
 	UpdateCamState();
 	UpdateCamera();
 	GetCamera()->CalculateViewProjection();
@@ -692,6 +700,10 @@ void Application::Draw()
 	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
 	_pTower->Draw(_pd3dDevice, _pImmediateContext);
 
+	cb.mWorld = XMMatrixTranspose(XMLoadFloat4x4(&_pSkySphere->GetWorld()));
+	_pImmediateContext->PSSetShaderResources(0, 1, &_pSkySphereTexture);
+	_pImmediateContext->UpdateSubresource(_pConstantBuffer, 0, nullptr, &cb, 0, 0);
+	_pSkySphere->Draw(_pd3dDevice, _pImmediateContext);
 
 	//
 	// Present our back buffer to our front buffer

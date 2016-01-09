@@ -47,6 +47,13 @@ struct ConstantBuffer
 	float															SpecularPower;
 	XMFLOAT3												LightVecW;
 };
+struct FogConstantBuffer
+{
+	float fogStart;
+	float fogEnd;
+	float padding1;
+	float padding2;
+};
 
 //
 // Height Mapping

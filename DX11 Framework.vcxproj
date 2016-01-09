@@ -381,6 +381,7 @@
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="DX11 Framework.cpp" />
     <ClCompile Include="Aircraft.cpp" />
+    <ClCompile Include="FogFX.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Runway.cpp" />
     <ClCompile Include="Terrain.cpp" />
@@ -400,6 +401,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Aircraft.h" />
+    <ClInclude Include="FogFX.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Runway.h" />
     <ClInclude Include="Terrain.h" />

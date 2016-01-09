@@ -24,6 +24,11 @@ cbuffer ConstantBuffer : register(b0)
 	float SpecularPower;
 	float3 LightVecW;
 }
+cbuffer FogCBuffer
+{
+	float fogStart;
+	float fogEnd;
+}
 //--------------------------------------------------------------------------------------
 struct VS_OUTPUT
 {
@@ -32,18 +37,24 @@ struct VS_OUTPUT
 	float4 Color : COLOR0;
 	float3 NormalL : NORMAL1;
 	float2 Tex : TEXCOORD0;
+	float fogFactor : FOG;
 };
 VS_OUTPUT VS(float4 Pos : POSITION, float3 NormalL : NORMAL, float2 Tex : TEXCOORD0)
 {
-	VS_OUTPUT output = (VS_OUTPUT)0;
-	output.Pos = mul(Pos, World);
+	float4 cameraPosition;
 
+	VS_OUTPUT output = (VS_OUTPUT)0;
+
+	output.Pos = mul(Pos, World);
 	output.Pos = mul(output.Pos, View);
 	output.Pos = mul(output.Pos, Projection);
 
 	output.NormalL = NormalL;
-
 	output.Tex = Tex;
+
+	cameraPosition = mul(Pos, World);
+	cameraPosition = mul(cameraPosition, View);
+	output.fogFactor = saturate((fogEnd - cameraPosition.z) / (fogEnd - fogStart));
 
 	return output;
 }
@@ -52,6 +63,11 @@ VS_OUTPUT VS(float4 Pos : POSITION, float3 NormalL : NORMAL, float2 Tex : TEXCOO
 //--------------------------------------------------------------------------------------
 float4 PS(VS_OUTPUT input) : SV_Target
 {
+
+	float4 colour;
+	float4 textureColour = txDiffuse.Sample(samLinear, input.Tex);
+	float4 fogColour;
+
 	float3 toEye = normalize(EyePosW - input.Pos.xyz);
 
 	float3 normalW = mul(float4(input.NormalL, 0.0f), World);
@@ -63,15 +79,13 @@ float4 PS(VS_OUTPUT input) : SV_Target
 	float diffuseAmount = max(dot(LightVecW, normalW), 0.0f);
 
 	float3 ambient = (AmbientMaterial * AmbientLight).rgb;
-
 	float3 diffuse = diffuseAmount * (DiffuseMtrl * DiffuseLight).rgb;
 	float3 specular = specularAmount * (SpecularMtrl * SpecularLight).rgb;
-	float4 Color;
 
-	float4 textureColour = txDiffuse.Sample(samLinear, input.Tex);
+	fogColour = float4(0.5f, 0.5f, 0.5f, 1.0f);
 
-	Color.rgb = (textureColour + (diffuse + ambient)) + specular;
-	Color.a = DiffuseMtrl.a;
+	colour.rgb = /* input.fogFactor * */((textureColour + (diffuse + ambient)) + specular) /* fogColour*/;
+	colour.a = DiffuseMtrl.a;
 
-	return Color;
+	return colour;
 }

@@ -5,13 +5,6 @@
 
 #include <vector>
 #include <windows.h>
-#include <d3d11_1.h>
-#include <d3dcompiler.h>
-#include <d2d1.h>
-#include <dwrite.h>
-#include <directxmath.h>
-#include <directxcolors.h>
-
 #include "resource.h"
 
 #include "DDSTextureLoader.h"
@@ -23,6 +16,7 @@
 #include "Camera.h"
 #include "Aircraft.h"
 #include "Bilboard.h"
+#include "FogFX.h"
 
 using namespace std;
 using namespace DirectX;
@@ -51,6 +45,7 @@ private:
 	ID3D11ShaderResourceView*			_pTreeTexture;
 	ID3D11ShaderResourceView*			_pRunwayTexture;
 	ID3D11ShaderResourceView*			_pTowerTexture;
+	ID3D11ShaderResourceView*			_pSkySphereTexture;
 
 	ID3D11Buffer*										_pVertexBuffer;
 	ID3D11Buffer*										_pVertexBufferPyramid;
@@ -118,6 +113,7 @@ private:
 	OBJMesh												_pCityMesh;
 	OBJMesh												_pTreeMesh;
 	OBJMesh												_pTowerMesh;
+	OBJMesh												_pSkySphereMesh;
 
 	Terrain*													_pTerrain; 
 	Runway*													_pRunway;
@@ -126,6 +122,7 @@ private:
 
 	GameObject*											_pPlane2;
 	GameObject*											_pTower;
+	GameObject*											_pSkySphere;
 
 	float															_rotationUD;
 	float															_rotationLR;
